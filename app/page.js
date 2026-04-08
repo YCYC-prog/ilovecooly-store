@@ -132,9 +132,23 @@ export default function Home() {
                 Lease
               </button>
 
-              <button className="px-5 py-2 rounded bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-semibold shadow-[0_0_10px_rgba(212,175,55,0.4)] hover:brightness-110 transition">
-                Buy
-              </button>
+              <button
+  onClick={async () => {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ beat }),
+    });
+
+    const data = await res.json();
+    window.location.href = data.url;
+  }}
+  className="px-5 py-2 rounded bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-semibold"
+>
+  Buy
+</button>
             </div>
 
           </div>
