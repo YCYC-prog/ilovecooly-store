@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import WaveSurfer from "wavesurfer.js";
 
 const beatsData = [
   {
@@ -28,14 +29,46 @@ const beatsData = [
 
 export default function Home() {
   const [currentBeat, setCurrentBeat] = useState(null);
-  const audioRef = useRef(null);
+  const waveformRef = useRef(null);
+  const waveSurfer = useRef(null);
 
+  // INIT WAVEFORM
+  useEffect(() => {
+    if (!waveformRef.current) return;
+
+    waveSurfer.current = WaveSurfer.create({
+      container: waveformRef.current,
+      waveColor: "#444",
+      progressColor: "#d4af37",
+      cursorColor: "#d4af37",
+      barWidth: 2,
+      height: 60,
+    });
+
+    return () => waveSurfer.current.destroy();
+  }, []);
+
+  // PLAY TRACK
   const playBeat = (beat) => {
     setCurrentBeat(beat);
-    if (audioRef.current) {
-      audioRef.current.src = beat.audio;
-      audioRef.current.play();
-    }
+    waveSurfer.current.load(beat.audio);
+
+    waveSurfer.current.once("ready", () => {
+      waveSurfer.current.play();
+    });
+  };
+
+  // HOVER PREVIEW (5 sec)
+  const previewBeat = (beat) => {
+    waveSurfer.current.load(beat.audio);
+
+    waveSurfer.current.once("ready", () => {
+      waveSurfer.current.play();
+
+      setTimeout(() => {
+        waveSurfer.current.pause();
+      }, 5000);
+    });
   };
 
   return (
@@ -65,7 +98,8 @@ export default function Home() {
         {beatsData.map((beat, i) => (
           <div
             key={beat.id}
-            className="relative flex items-center justify-between px-6 py-4 border-b border-zinc-800 hover:bg-[#111] hover:shadow-[0_0_25px_rgba(212,175,55,0.15)] transition"
+            onMouseEnter={() => previewBeat(beat)}
+            className="relative flex items-center justify-between px-6 py-4 border-b border-zinc-800 hover:bg-[#111] hover:shadow-[0_0_25px_rgba(212,175,55,0.15)] transition cursor-pointer"
           >
 
             {/* GOLD STREAK */}
@@ -85,9 +119,6 @@ export default function Home() {
               <div>
                 <p className="font-semibold text-white">{beat.title}</p>
                 <p className="text-xs text-gray-400">{beat.tag}</p>
-
-                {/* FAKE WAVEFORM */}
-                <div className="mt-2 h-[4px] w-40 bg-gradient-to-r from-yellow-400 via-gray-400 to-transparent opacity-60 rounded"></div>
               </div>
             </div>
 
@@ -111,22 +142,14 @@ export default function Home() {
 
       </div>
 
-      {/* PLAYER */}
-      <div className="fixed bottom-0 left-0 w-full bg-gradient-to-t from-black to-[#111] border-t border-zinc-800 px-6 py-4 flex items-center justify-between">
+      {/* WAVEFORM PLAYER */}
+      <div className="fixed bottom-0 left-0 w-full bg-gradient-to-t from-black to-[#111] border-t border-zinc-800 px-6 py-4">
 
-        <div>
-          <p className="text-sm text-white">
-            {currentBeat ? currentBeat.title : "No track playing"}
-          </p>
+        <div className="mb-2 text-sm text-gray-400">
+          {currentBeat ? currentBeat.title : "Hover or select a beat"}
         </div>
 
-        <div className="w-1/2">
-          <audio ref={audioRef} controls className="w-full" />
-        </div>
-
-        <button className="px-5 py-2 rounded bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-semibold">
-          BUY
-        </button>
+        <div ref={waveformRef}></div>
 
       </div>
 
